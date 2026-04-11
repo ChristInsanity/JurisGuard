@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JurisGuard</title>
+    <style>
+      :root {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: #0c1017;
+        color: #e8edf4;
+        --border: #263041;
+        --surface: #141b26;
+        --accent: #3b82f6;
+        --accent-dim: #2563eb;
+        --ok: #22c55e;
+        --warn: #f59e0b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+      header h1 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      nav {
+        display: flex;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      nav button {
+        padding: 0.45rem 0.85rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-size: 0.875rem;
+      }
+      nav button:hover {
+        background: #1c2635;
+      }
+      nav button.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 1.25rem 1rem 3rem;
+      }
+      section.panel {
+        display: none;
+      }
+      section.panel.visible {
+        display: block;
+      }
+      label {
+        display: block;
+        margin-top: 0.85rem;
+        font-size: 0.8rem;
+        opacity: 0.85;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="password"],
+      input[type="number"] {
+        width: 100%;
+        max-width: 380px;
+        padding: 0.55rem 0.7rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #0f141c;
+        color: inherit;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin-top: 0.75rem;
+      }
+      button.primary {
+        padding: 0.55rem 1rem;
+        border-radius: 8px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      button.primary:hover {
+        background: var(--accent-dim);
+      }
+      button.primary:disabled,
+      button.ghost:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      button.ghost {
+        padding: 0.55rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+      .muted {
+        font-size: 0.875rem;
+        opacity: 0.72;
+        line-height: 1.45;
+        margin: 0.5rem 0 0;
+      }
+      pre.out {
+        background: #0f141c;
+        padding: 1rem;
+        border-radius: 10px;
+        overflow: auto;
+        font-size: 0.78rem;
+        border: 1px solid var(--border);
+        max-height: 320px;
+        margin-top: 1rem;
+      }
+      .scan-layout {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      @media (min-width: 720px) {
+        .scan-layout {
+          grid-template-columns: 1fr 1fr;
+          align-items: start;
+        }
+      }
+      .video-wrap {
+        position: relative;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        aspect-ratio: 4/3;
+        max-height: 420px;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .video-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7a90;
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 1rem;
+      }
+      .badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.45rem;
+        border-radius: 4px;
+        background: #263041;
+      }
+      .badge.live {
+        background: #14532d;
+        color: #86efac;
+      }
+      textarea.verify {
+        width: 100%;
+        min-height: 140px;
+        margin-top: 0.5rem;
+        padding: 0.65rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #0f141c;
+        color: inherit;
+        font-family: ui-monospace, monospace;
+        font-size: 0.8rem;
+      }
+      .field-grid {
+        display: grid;
+        gap: 0.35rem;
+        margin-top: 0.75rem;
+        font-size: 0.82rem;
+      }
+      .field-grid div {
+        padding: 0.35rem 0.5rem;
+        background: #0f141c;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+      }
+      .field-grid strong {
+        color: #93c5fd;
+        font-weight: 500;
+      }
+      .extract-grid {
+        display: grid;
+        gap: 0.55rem;
+        margin-top: 0.75rem;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      }
+      .extract-card {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.6rem;
+        background: #0f141c;
+      }
+      .extract-card.extracted {
+        border-color: #14532d;
+        background: #0d1d13;
+      }
+      .extract-card.missing {
+        border-color: #4b5563;
+      }
+      .extract-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+      }
+      .extract-name {
+        font-size: 0.78rem;
+        color: #93c5fd;
+        font-weight: 600;
+      }
+      .extract-state {
+        font-size: 0.68rem;
+        border-radius: 999px;
+        padding: 0.15rem 0.45rem;
+        border: 1px solid #4b5563;
+        color: #cbd5e1;
+      }
+      .extract-card.extracted .extract-state {
+        border-color: #22c55e;
+        color: #86efac;
+        background: rgba(34, 197, 94, 0.14);
+      }
+      .extract-value {
+        min-height: 2.2em;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.82rem;
+        color: #e2e8f0;
+      }
+      .extract-value.empty {
+        color: #64748b;
+        font-style: italic;
+      }
+      input[type="checkbox"] {
+        width: auto;
+        margin-right: 0.35rem;
+      }
+      .hint {
+        font-size: 0.78rem;
+        color: var(--warn);
+        margin-top: 0.5rem;
+        line-height: 1.45;
+      }
+      .hint.ok {
+        color: #86efac;
+        border-left: 3px solid var(--ok);
+        padding-left: 0.65rem;
+      }
+      .hint ul {
+        margin: 0.4rem 0 0 1rem;
+        padding: 0;
+      }
+      .preview-wrap {
+        margin-top: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        background: #0f141c;
+      }
+      .preview-wrap img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .preview-meta {
+        font-size: 0.74rem;
+        color: #9fb0c7;
+        padding: 0.45rem 0.6rem;
+        border-top: 1px solid var(--border);
+      }
+      .preview-warn {
+        color: #fca5a5;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>JurisGuard</h1>
+      <nav>
+        <button type="button" class="tab active" data-tab="login">
+          Sign in
+        </button>
+        <button type="button" class="tab" data-tab="cases">Cases</button>
+        <button type="button" class="tab" data-tab="scan">Live scan</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="panel-login" class="panel visible">
+        <p class="muted">
+          Sign in to use the case archive and document camera.
+        </p>
+        <label>Email</label>
+        <input
+          id="email"
+          type="email"
+          autocomplete="username"
+          value="admin@jurisguard.local"
+        />
+        <label>Password</label>
+        <input id="password" type="password" autocomplete="current-password" />
+        <div class="row">
+          <button type="button" class="primary" id="btnLogin">Sign in</button>
+          <span id="loginStatus" class="muted"></span>
+        </div>
+      </section>
+
+      <section id="panel-cases" class="panel">
+        <p class="muted">Read-only list from <code>/api/cases/</code>.</p>
+        <div class="row">
+          <button type="button" class="primary" id="btnCases" disabled>
+            Refresh cases
+          </button>
+        </div>
+        <pre class="out" id="outCases">Sign in first.</pre>
+      </section>
+
+      <section id="panel-scan" class="panel">
+        <p class="muted">
+          Use your device camera to preview a physical form, then capture one
+          frame for OCR. Works on <strong>localhost</strong> or
+          <strong>HTTPS</strong>. Use good lighting and hold the page flat and
+          in focus.
+        </p>
+        <div id="ocrStatus" class="hint">Checking server OCR status…</div>
+
+        <div class="scan-layout">
+          <div>
+            <div class="video-wrap">
+              <video id="video" playsinline muted autoplay></video>
+              <div id="videoPlaceholder" class="video-placeholder">
+                Camera off — press “Start camera”
+              </div>
+            </div>
+            <div class="row" style="margin-top: 0.75rem">
+              <span id="camBadge" class="badge">Camera off</span>
+            </div>
+            <div class="row">
+              <button type="button" class="primary" id="btnCamStart" disabled>
+                Start camera
+              </button>
+              <button type="button" class="ghost" id="btnCamStop" disabled>
+                Stop
+              </button>
+            </div>
+            <div class="row">
+              <button type="button" class="primary" id="btnCapture" disabled>
+                Capture &amp; extract
+              </button>
+              <button type="button" class="ghost" id="btnSaveArchive" disabled>
+                Save capture to archive
+              </button>
+            </div>
+            <label>Upload photo for OCR (no camera required)</label>
+            <input id="photoFile" type="file" accept="image/*" />
+            <div class="row">
+              <button type="button" class="primary" id="btnPhotoScan" disabled>
+                Scan uploaded photo
+              </button>
+            </div>
+            <label style="margin-top: 1rem"
+              ><input type="checkbox" id="chkPreviewOnly" checked /> Preview
+              only (do not save file until you click “Save capture to
+              archive”)</label
+            >
+            <label>Optional case ID to link saved document</label>
+            <input
+              type="number"
+              id="caseIdLink"
+              placeholder="Leave empty if not yet in system"
+              min="1"
+            />
+          </div>
+          <div>
+            <label>Extracted text (edit before copying to a case record)</label>
+            <textarea
+              class="verify"
+              id="ocrText"
+              placeholder="OCR output appears here…"
+            ></textarea>
+            <label>OCR auto-crop and preprocessing preview</label>
+            <div class="preview-wrap">
+              <img id="ocrPreview" alt="OCR preview" style="display: none" />
+              <div id="ocrPreviewEmpty" class="muted" style="padding: 0.6rem">
+                Preview appears after scan.
+              </div>
+              <div id="ocrPreviewMeta" class="preview-meta"></div>
+            </div>
+            <label>Extraction indicators</label>
+            <div class="extract-grid" id="extractIndicators"></div>
+            <label>Suggested fields (heuristic)</label>
+            <div class="field-grid" id="suggestedFields"></div>
+            <pre class="out" id="outScan" style="max-height: 180px"></pre>
+          </div>
+        </div>
+        <canvas id="canvas" hidden></canvas>
+      </section>
+    </main>
+
+    <script>
+      const STORAGE_KEY = "jurisguard_token";
+      let token = sessionStorage.getItem(STORAGE_KEY);
+      let stream = null;
+      let lastCaptureBlob = null;
+      let selectedPhotoFile = null;
+
+      const $ = (id) => document.getElementById(id);
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function showTab(name) {
+        document
+          .querySelectorAll(".tab")
+          .forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+        document
+          .querySelectorAll(".panel")
+          .forEach((p) => p.classList.remove("visible"));
+        $("panel-" + name).classList.add("visible");
+        if (name === "scan") refreshOcrStatus();
+      }
+
+      async function refreshOcrStatus() {
+        const el = $("ocrStatus");
+        if (!el) return;
+        try {
+          const r = await fetch("/api/health");
+          const data = await r.json();
+          const ocr = data.ocr || {};
+          el.className = "hint" + (ocr.ready ? " ok" : "");
+          if (ocr.ready) {
+            el.innerHTML =
+              "<strong>OCR ready.</strong> " + escapeHtml(ocr.message || "");
+            return;
+          }
+          let html =
+            "<strong>OCR not ready on the server.</strong> " +
+            escapeHtml(ocr.message || "");
+          const steps = ocr.install_steps || [];
+          if (steps.length) {
+            html += "<ul>";
+            steps.forEach((s) => {
+              html += "<li>" + escapeHtml(s) + "</li>";
+            });
+            html += "</ul>";
+          }
+          el.innerHTML = html;
+        } catch (e) {
+          el.className = "hint";
+          el.textContent = "Could not load /api/health — is the API running?";
+        }
+      }
+
+      refreshOcrStatus();
+
+      document.querySelectorAll(".tab").forEach((btn) => {
+        btn.addEventListener("click", () => showTab(btn.dataset.tab));
+      });
+
+      function authHeaders() {
+        const h = { "Content-Type": "application/json" };
+        if (token) h["Authorization"] = "Bearer " + token;
+        return h;
+      }
+
+      function setAuthedUi() {
+        const ok = !!token;
+        $("btnCases").disabled = !ok;
+        $("btnCamStart").disabled = !ok;
+        $("btnPhotoScan").disabled = !ok || !selectedPhotoFile;
+        $("loginStatus").textContent = ok ? "Signed in." : "";
+      }
+
+      if (token) setAuthedUi();
+
+      $("btnLogin").onclick = async () => {
+        $("loginStatus").textContent = "Signing in…";
+        const body = new URLSearchParams({
+          username: $("email").value,
+          password: $("password").value,
+        });
+        const r = await fetch("/api/auth/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body,
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          $("loginStatus").textContent = data.detail || "Login failed";
+          return;
+        }
+        token = data.access_token;
+        sessionStorage.setItem(STORAGE_KEY, token);
+        setAuthedUi();
+        $("loginStatus").textContent = "Signed in.";
+      };
+
+      $("btnCases").onclick = async () => {
+        const r = await fetch("/api/cases/", { headers: authHeaders() });
+        const data = await r.json();
+        $("outCases").textContent = JSON.stringify(data, null, 2);
+      };
+
+      const video = $("video");
+      const placeholder = $("videoPlaceholder");
+      const canvas = $("canvas");
+      const ctx = canvas.getContext("2d");
+
+      function setCamBadge(on) {
+        const b = $("camBadge");
+        b.textContent = on ? "Live" : "Camera off";
+        b.classList.toggle("live", on);
+      }
+
+      $("btnCamStart").onclick = async () => {
+        $("outScan").textContent = "";
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+            audio: false,
+          });
+          video.srcObject = stream;
+          await video.play();
+          placeholder.style.display = "none";
+          $("btnCamStop").disabled = false;
+          $("btnCapture").disabled = false;
+          setCamBadge(true);
+        } catch (e) {
+          $("outScan").textContent = String(e.message || e);
+          alert(
+            "Could not open camera. Allow permission, use HTTPS or localhost, and try again.",
+          );
+        }
+      };
+
+      $("btnCamStop").onclick = () => {
+        if (stream) {
+          stream.getTracks().forEach((t) => t.stop());
+          stream = null;
+        }
+        video.srcObject = null;
+        placeholder.style.display = "flex";
+        $("btnCamStop").disabled = true;
+        $("btnCapture").disabled = true;
+        $("btnSaveArchive").disabled = !lastCaptureBlob;
+        setCamBadge(false);
+      };
+
+      function drawFrameToCanvas() {
+        const w = video.videoWidth;
+        const h = video.videoHeight;
+        if (!w || !h) return null;
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(video, 0, 0, w, h);
+        return true;
+      }
+
+      function blobFromCanvas(cb) {
+        canvas.toBlob(cb, "image/jpeg", 0.92);
+      }
+
+      async function uploadCapture(
+        fileObj,
+        persist,
+        filename = "camera-capture.jpg",
+        docType = "camera_intake",
+      ) {
+        const fd = new FormData();
+        fd.append("file", fileObj, filename);
+        fd.append("doc_type", docType);
+        const cid = $("caseIdLink").value.trim();
+        if (cid) fd.append("case_id", cid);
+        fd.append("persist", persist ? "true" : "false");
+
+        const r = await fetch("/api/documents/ocr-upload", {
+          method: "POST",
+          headers: token ? { Authorization: "Bearer " + token } : {},
+          body: fd,
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          $("outScan").textContent = JSON.stringify(data, null, 2);
+          throw new Error(data.detail || "Upload failed");
+        }
+        return data;
+      }
+
+      function renderSuggested(suggested) {
+        const el = $("suggestedFields");
+        el.innerHTML = "";
+        if (!suggested || typeof suggested !== "object") return;
+        for (const [k, v] of Object.entries(suggested)) {
+          if (k === "first_lines_preview" && Array.isArray(v)) {
+            const d = document.createElement("div");
+            d.innerHTML =
+              "<strong>" +
+              k +
+              "</strong><br/>" +
+              v.map((x) => escapeHtml(String(x))).join("<br/>");
+            el.appendChild(d);
+          } else {
+            const d = document.createElement("div");
+            d.innerHTML =
+              "<strong>" +
+              escapeHtml(k) +
+              "</strong> — " +
+              escapeHtml(JSON.stringify(v));
+            el.appendChild(d);
+          }
+        }
+      }
+
+      function renderOcrPreview(data) {
+        const img = $("ocrPreview");
+        const empty = $("ocrPreviewEmpty");
+        const meta = $("ocrPreviewMeta");
+        const src = data && data.ocr_preview_data_url;
+        if (src) {
+          img.src = src;
+          img.style.display = "block";
+          empty.style.display = "none";
+        } else {
+          img.removeAttribute("src");
+          img.style.display = "none";
+          empty.style.display = "block";
+        }
+        const detected =
+          data && data.document_detected ? "detected" : "not detected";
+        const engine = (data && data.ocr_engine) || "tesseract";
+        const variant = (data && data.ocr_best_variant) || "n/a";
+        const lang = (data && data.ocr_lang) || "n/a";
+        const quality = (data && data.scan_quality) || {};
+        const warns = (data && data.scan_warnings) || [];
+        const qualityText =
+          quality && Object.keys(quality).length
+            ? " | Sharpness: " + (quality.laplacian_var ?? "n/a")
+            : "";
+        meta.textContent =
+          "Document: " +
+          detected +
+          " | Engine: " +
+          engine +
+          " | Variant: " +
+          variant +
+          " | OCR lang: " +
+          lang +
+          qualityText;
+        if (warns.length) {
+          meta.innerHTML +=
+            '<br/><span class="preview-warn">' +
+            warns.map((w) => escapeHtml(String(w))).join(" | ") +
+            "</span>";
+        }
+      }
+
+      const EXTRACT_FIELDS = [
+        ["region_suggested", "Region"],
+        ["district_office_suggested", "District Office"],
+        ["control_number_suggested", "Control Number"],
+        ["client_name_suggested", "Client Name"],
+        ["address_suggested", "Address"],
+        ["contact_suggested", "Contact Number"],
+        ["date_suggested", "Date"],
+        ["interviewer_name_suggested", "Mananayam / Interviewer"],
+        ["referred_by_suggested", "Ini-refer / Inindorso ng"],
+        ["title_of_case_suggested", "Title of Case"],
+        ["case_number_suggested", "Case Number"],
+        ["court_suggested", "Court / Body"],
+        ["party_represented_suggested", "Party Represented"],
+        ["cause_of_action_suggested", "Cause of Action"],
+        ["status_suggested", "Case Status"],
+        ["last_action_taken_suggested", "Last Action Taken"],
+        ["cause_of_termination_suggested", "Cause of Termination"],
+        ["date_of_termination_suggested", "Date of Termination"],
+      ];
+
+      function stringifyValue(v) {
+        if (v === null || v === undefined) return "";
+        if (Array.isArray(v)) return v.join("\n");
+        if (typeof v === "object") return JSON.stringify(v);
+        return String(v);
+      }
+
+      function renderIndicators(suggested) {
+        const el = $("extractIndicators");
+        el.innerHTML = "";
+        const src = suggested && typeof suggested === "object" ? suggested : {};
+
+        EXTRACT_FIELDS.forEach(([key, label]) => {
+          const raw = stringifyValue(src[key]).trim();
+          const found = !!raw;
+          const card = document.createElement("div");
+          card.className = "extract-card " + (found ? "extracted" : "missing");
+
+          const valueClass = found ? "extract-value" : "extract-value empty";
+          card.innerHTML =
+            '<div class="extract-head">' +
+            '<span class="extract-name">' +
+            escapeHtml(label) +
+            "</span>" +
+            '<span class="extract-state">' +
+            (found ? "Extracted" : "Missing") +
+            "</span>" +
+            "</div>" +
+            '<div class="' +
+            valueClass +
+            '">' +
+            escapeHtml(found ? raw : "Not detected yet") +
+            "</div>";
+          el.appendChild(card);
+        });
+      }
+
+      $("btnCapture").onclick = async () => {
+        if (!drawFrameToCanvas()) {
+          alert(
+            "Video not ready yet — wait a second after starting the camera.",
+          );
+          return;
+        }
+        blobFromCanvas(async (blob) => {
+          if (!blob) return;
+          lastCaptureBlob = blob;
+          $("btnSaveArchive").disabled = false;
+          $("outScan").textContent = "Running OCR…";
+          const preview = $("chkPreviewOnly").checked;
+          try {
+            const data = await uploadCapture(
+              blob,
+              !preview,
+              "camera-capture.jpg",
+              "camera_intake",
+            );
+            $("ocrText").value = data.raw_text || "";
+            renderOcrPreview(data);
+            renderIndicators(data.suggested_fields);
+            renderSuggested(data.suggested_fields);
+            $("outScan").textContent = JSON.stringify(
+              { document_id: data.document_id, persisted: data.persisted },
+              null,
+              2,
+            );
+          } catch (e) {
+            $("outScan").textContent += "\n" + String(e.message || e);
+          }
+        });
+      };
+
+      $("btnSaveArchive").onclick = async () => {
+        if (!lastCaptureBlob) return;
+        $("outScan").textContent = "Saving to archive…";
+        try {
+          const fileName = selectedPhotoFile
+            ? selectedPhotoFile.name
+            : "camera-capture.jpg";
+          const docType = selectedPhotoFile ? "photo_upload" : "camera_intake";
+          const data = await uploadCapture(
+            lastCaptureBlob,
+            true,
+            fileName,
+            docType,
+          );
+          $("ocrText").value = data.raw_text || "";
+          renderOcrPreview(data);
+          renderIndicators(data.suggested_fields);
+          renderSuggested(data.suggested_fields);
+          $("outScan").textContent = JSON.stringify(data, null, 2);
+          $("chkPreviewOnly").checked = false;
+        } catch (e) {
+          $("outScan").textContent = String(e.message || e);
+        }
+      };
+
+      $("photoFile").addEventListener("change", () => {
+        const f = $("photoFile").files && $("photoFile").files[0];
+        selectedPhotoFile = f || null;
+        setAuthedUi();
+        if (selectedPhotoFile) {
+          $("outScan").textContent =
+            "Photo selected: " + selectedPhotoFile.name;
+        }
+      });
+
+      $("btnPhotoScan").onclick = async () => {
+        if (!selectedPhotoFile) {
+          alert("Choose an image file first.");
+          return;
+        }
+        $("outScan").textContent = "Running OCR on uploaded photo…";
+        const preview = $("chkPreviewOnly").checked;
+        try {
+          lastCaptureBlob = selectedPhotoFile;
+          $("btnSaveArchive").disabled = false;
+          const data = await uploadCapture(
+            selectedPhotoFile,
+            !preview,
+            selectedPhotoFile.name || "uploaded-photo.jpg",
+            "photo_upload",
+          );
+          $("ocrText").value = data.raw_text || "";
+          renderOcrPreview(data);
+          renderIndicators(data.suggested_fields);
+          renderSuggested(data.suggested_fields);
+          $("outScan").textContent = JSON.stringify(
+            { document_id: data.document_id, persisted: data.persisted },
+            null,
+            2,
+          );
+        } catch (e) {
+          $("outScan").textContent = String(e.message || e);
+        }
+      };
+
+      renderIndicators({});
+      renderOcrPreview(null);
+
+      window.addEventListener("beforeunload", () => {
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+# Optional: install when Tesseract OCR + Python bindings are available (use Python 3.12/3.13 if wheels fail on 3.14)
+-r requirements.txt
+pillow>=11.0.0
+pytesseract>=0.3.13
+opencv-python-headless>=4.10.0
+numpy>=1.26.0
+# Optional handwriting-focused recognizer. Typically works on Python <= 3.12.
+easyocr>=1.7.1; python_version < "3.14"

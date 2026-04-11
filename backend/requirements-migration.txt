@@ -1,0 +1,3 @@
+# One-time migration from PAO inventory Excel to the API database
+-r requirements.txt
+openpyxl>=3.1.0
