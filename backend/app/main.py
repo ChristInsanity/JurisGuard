@@ -13,6 +13,7 @@ from app.ocr_service import get_ocr_status
 from app.routers import auth, cases, clients, documents
 
 
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
@@ -49,3 +50,5 @@ def spa_index():
 @app.get("/api/health")
 def health():
     return {"status": "ok", "app": settings.app_name, "ocr": get_ocr_status()}
+
+
