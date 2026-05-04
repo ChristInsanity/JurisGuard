@@ -1,10 +1,15 @@
-export const API_BASE = "http://127.0.0.1:8010/api";
+const API = "http://127.0.0.1:8000/api";
 
-export function getAuthHeaders() {
+export async function getClients() {
   const token = localStorage.getItem("token");
 
-  return {
-    "Content-Type": "application/json",
-    Authorization: token ? `Bearer ${token}` : "",
-  };
+  const res = await fetch(`${API}/clients`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch clients");
+
+  return res.json();
 }

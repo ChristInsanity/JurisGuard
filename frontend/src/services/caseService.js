@@ -1,17 +1,15 @@
-import { API_BASE, getAuthHeaders } from "./api";
+const API = "http://127.0.0.1:8000/api";
 
 export async function getCases() {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://127.0.0.1:8010/api/cases/", {
+  const res = await fetch(`${API}/cases`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 
-  if (!res.ok) {
-    throw new Error("Unauthorized");
-  }
+  if (!res.ok) throw new Error("Failed to fetch cases");
 
   return res.json();
 }
