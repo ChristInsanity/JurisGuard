@@ -8,7 +8,8 @@ import { useCamera } from "../../features/criminalCases/hooks/useCamera";
 import { useCriminalCasesStore } from "../../features/criminalCases/criminalCasesStore";
 import { runMockClientOcr } from "../../features/criminalCases/mockOcrService";
 import { clientFormSchema, type ClientFormValues } from "../../features/criminalCases/schemas";
-import type { ExtractionMap, ExtractedClientPayload, IntakeMethod } from "../../types";
+import type { ClientRecord, ExtractionMap, ExtractedClientPayload, IntakeMethod } from "../../types";
+import { CaseWorkflow } from "./CaseWorkflow";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ const defaultValues: ClientFormValues = {
 };
 
 const steps = ["CLIENT", "CLIENT_DETAILS", "CLIENT_CLASSIFICATION"];
+const workflowSteps = ["Intake Method", "Client", "Client Details", "Classification"];
 
 const stepFields: Array<Array<FieldPath<ClientFormValues>>> = [
   [
@@ -98,7 +100,7 @@ function TextInput({
       <input
         type={type}
         {...registration}
-        className="mt-1 w-full rounded-md border border-[#e5e7eb] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2f80ed] focus:ring-2 focus:ring-[#2f80ed]/15"
+        className="mt-1 w-full rounded-md border border-[#e5e7eb] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
       />
       <FieldError message={error} />
     </label>
@@ -126,7 +128,7 @@ function SelectInput({
       </span>
       <select
         {...registration}
-        className="mt-1 w-full rounded-md border border-[#e5e7eb] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2f80ed] focus:ring-2 focus:ring-[#2f80ed]/15"
+        className="mt-1 w-full rounded-md border border-[#e5e7eb] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
       >
         <option value="">Select</option>
         {options.map((option) => (
@@ -145,10 +147,48 @@ function getPayloadValue(payload: ExtractedClientPayload, path: FieldPath<Client
   }, payload);
 }
 
+function MethodCard({
+  value,
+  title,
+  description,
+  icon,
+  selected,
+  onSelect,
+}: {
+  value: IntakeMethod;
+  title: string;
+  description: string;
+  icon: string;
+  selected: boolean;
+  onSelect: (value: IntakeMethod) => void;
+}) {
+  return (
+    <button
+      type="button"
+      key={value}
+      onClick={() => onSelect(value)}
+      className={`rounded-lg border bg-white p-5 text-left shadow-sm transition duration-200 hover:-translate-y-px hover:shadow-md ${
+        selected
+          ? "border-[#2F80ED] shadow-[#2F80ED]/15"
+          : "border-[#E5E7EB] hover:border-[#2F80ED]"
+      }`}
+    >
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EFF6FF] text-[#2F80ED]">
+        <i className={`fa-solid ${icon}`} aria-hidden="true" />
+      </div>
+      <p className="mt-4 text-base font-semibold text-[#111827]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[#6B7280]">{description}</p>
+    </button>
+  );
+}
+
 export default function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
   const addClient = useCriminalCasesStore((state) => state.addClient);
+  const addCase = useCriminalCasesStore((state) => state.addCase);
   const [method, setMethod] = useState<IntakeMethod | null>(null);
   const [step, setStep] = useState(0);
+  const [phase, setPhase] = useState<"client" | "case">("client");
+  const [createdClient, setCreatedClient] = useState<ClientRecord | null>(null);
   const [documentPreview, setDocumentPreview] = useState<string | null>(null);
   const [documentLabel, setDocumentLabel] = useState("");
   const [indicators, setIndicators] = useState<ExtractionMap>({});
@@ -189,6 +229,8 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
     setDocumentPreview(null);
     setDocumentLabel("");
     setIndicators({});
+    setPhase("client");
+    setCreatedClient(null);
     onClose();
   };
 
@@ -272,53 +314,79 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
   };
 
   const onSubmit = (data: ClientFormValues) => {
-    addClient(data);
-    closeModal();
+    const client = addClient(data);
+    stopCamera();
+    setCreatedClient(client);
+    setPhase("case");
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/30 px-4 py-6 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-lg border border-[#e5e7eb] bg-[#FFFFFF] shadow-2xl shadow-[#111827]/10">
-        <div className="border-b border-[#e5e7eb] px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/30 px-4 py-6 backdrop-blur-sm transition-opacity duration-200">
+      <div className="max-h-[92vh] w-full max-w-6xl animate-[modalIn_200ms_ease-out] overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] shadow-2xl shadow-[#111827]/10">
+        <div className="border-b border-[#E5E7EB] bg-[#F3F4F6] px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-[#111827]">Add Client</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-[#111827]">Add Client</h2>
+              <p className="mt-1 text-sm text-[#6B7280]">
+                {phase === "client" ? "Create client record first." : "Attach criminal case to the new client."}
+              </p>
+            </div>
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-[#111827]/60 transition hover:bg-[#F9FAFB] hover:text-[#111827]/80"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-[#6B7280] transition duration-200 hover:bg-white hover:text-[#111827]"
             >
               Close
             </button>
           </div>
         </div>
 
-        {!method ? (
-          <div className="grid gap-4 p-6 md:grid-cols-3">
-            {[
-              ["manual", "Manual Entry", "Encode client details using a guided form."],
-              ["camera", "Live Camera OCR", "Start camera, capture a document, then review extracted fields."],
-              ["upload", "Upload Document OCR", "Upload an image or PDF and review mock OCR results."],
-            ].map(([value, title, description]) => (
-              <button
-                type="button"
-                key={value}
-                onClick={() => setMethod(value as IntakeMethod)}
-                className="rounded-lg border border-[#e5e7eb] bg-[#FFFFFF] p-5 text-left shadow-sm transition hover:border-[#2f80ed] hover:bg-[#f8f9fa]"
-              >
-                <p className="text-base font-semibold text-[#111827]">{title}</p>
-                <p className="mt-2 text-sm leading-6 text-[#111827]/60">{description}</p>
-              </button>
-            ))}
-          </div>
+        {phase === "case" && createdClient ? (
+          <CaseWorkflow
+            clients={[]}
+            lockedClient={createdClient}
+            submitLabel="Save Case"
+            onSubmit={(values) => {
+              addCase(values);
+              closeModal();
+            }}
+          />
+        ) : !method ? (
+          <>
+            <div className="border-b border-[#E5E7EB] bg-white px-6 py-4">
+              <StepIndicator steps={workflowSteps} currentStep={0} />
+            </div>
+            <div className="grid gap-4 bg-white p-6 md:grid-cols-3">
+              <MethodCard value="manual" title="Manual Entry" description="Encode client details using a guided form." icon="fa-keyboard" selected={method === "manual"} onSelect={setMethod} />
+              <MethodCard value="camera" title="Live Camera OCR" description="Start camera, capture a document, then review extracted fields." icon="fa-camera" selected={method === "camera"} onSelect={setMethod} />
+              <MethodCard value="upload" title="Upload Document OCR" description="Upload an image or PDF and review mock OCR results." icon="fa-upload" selected={method === "upload"} onSelect={setMethod} />
+            </div>
+          </>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="flex max-h-[calc(92vh-74px)] flex-col">
-            <div className="border-b border-[#e5e7eb] px-6 py-4">
-              <StepIndicator steps={steps} currentStep={step} />
+            <div className="border-b border-[#E5E7EB] bg-white px-6 py-4">
+              <StepIndicator steps={workflowSteps} currentStep={step + 1} />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto bg-white px-6 py-5">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#111827]">
+                    Method: {method === "manual" ? "Manual Entry" : method === "camera" ? "Live Camera OCR" : "Upload Document OCR"}
+                  </p>
+                  <p className="text-xs text-[#6B7280]">Switch methods anytime without clearing entered fields.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMethod(null)}
+                  className="rounded-md border border-[#2F80ED] bg-white px-3 py-1.5 text-xs font-semibold text-[#2F80ED] transition duration-200 hover:-translate-y-px hover:bg-[#2F80ED] hover:text-white"
+                >
+                  Change Method
+                </button>
+              </div>
+
               {method === "camera" && (
-                <div className="mb-5 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] p-4">
+                <div className="mb-5 rounded-lg border border-[#e5e7eb] bg-[#F9FAFB] p-4">
                   <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
                     <video
                       ref={videoRef}
@@ -327,13 +395,13 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
                       className="aspect-video w-full rounded-md border border-[#E5E7EB] bg-[#F9FAFB] object-cover"
                     />
                     <div className="space-y-3">
-                      <button type="button" onClick={startCamera} className="w-full rounded-md bg-[#2f80ed] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1f6fd6]">
+                      <button type="button" onClick={startCamera} className="w-full rounded-md bg-[#2F80ED] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1f6fd6]">
                         Start Camera
                       </button>
                       <button type="button" onClick={stopCamera} className="w-full rounded-md border border-[#E5E7EB] bg-[#FFFFFF] px-4 py-2 text-sm font-semibold text-[#111827]/80 hover:bg-[#F9FAFB]">
                         Stop Camera
                       </button>
-                      <button type="button" disabled={!isCameraActive || isExtracting} onClick={handleCapture} className="w-full rounded-md border border-[#2f80ed] bg-white px-4 py-2 text-sm font-semibold text-[#2f80ed] hover:bg-[#2f80ed] hover:text-white disabled:opacity-50">
+                      <button type="button" disabled={!isCameraActive || isExtracting} onClick={handleCapture} className="w-full rounded-md border border-[#2F80ED] bg-white px-4 py-2 text-sm font-semibold text-[#2F80ED] hover:bg-[#2F80ED] hover:text-white disabled:opacity-50">
                         {isExtracting ? "Extracting..." : "Capture"}
                       </button>
                       {cameraError && <p className="text-sm text-red-600">{cameraError}</p>}
@@ -343,21 +411,21 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
               )}
 
               {method === "upload" && (
-                <div className="mb-5 rounded-lg border border-dashed border-[#e5e7eb] bg-[#f8f9fa] p-4">
+                <div className="mb-5 rounded-lg border border-dashed border-[#e5e7eb] bg-[#F9FAFB] p-4">
                   <label className="block">
                     <span className="text-sm font-semibold text-[#111827]/80">Upload image or PDF</span>
                     <input
                       type="file"
                       accept="image/*,.pdf,application/pdf"
                       onChange={handleUpload}
-                      className="mt-3 block w-full text-sm text-[#111827]/70 file:mr-4 file:rounded-md file:border-0 file:bg-[#2f80ed] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
+                      className="mt-3 block w-full text-sm text-[#111827]/70 file:mr-4 file:rounded-md file:border-0 file:bg-[#2F80ED] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
                     />
                   </label>
                 </div>
               )}
 
               {hasOcrResult && (
-                <div className="mb-5 grid gap-4 rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/10 p-4 lg:grid-cols-[220px_1fr]">
+                <div className="mb-5 grid gap-4 rounded-lg border border-[#15803D]/30 bg-[#15803D]/10 p-4 lg:grid-cols-[220px_1fr]">
                   <div>
                     {documentPreview ? (
                       <img src={documentPreview} alt="Document preview" className="max-h-40 w-full rounded-md border border-emerald-200 object-cover" />
@@ -461,24 +529,33 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
               )}
             </div>
 
-            <div className="sticky bottom-0 flex justify-between border-t border-[#e5e7eb] bg-[#f8f9fa] px-6 py-4">
+            <div className="sticky bottom-0 flex justify-between border-t border-[#E5E7EB] bg-[#F3F4F6] px-6 py-4">
               <button
                 type="button"
                 onClick={() => (step === 0 ? setMethod(null) : setStep((current) => Math.max(current - 1, 0)))}
-                className="rounded-md border border-[#6c757d]/40 bg-[#FFFFFF] px-4 py-2 text-sm font-medium text-[#6c757d] transition hover:bg-[#f8f9fa]"
+                className="rounded-md border border-[#6c757d]/40 bg-[#FFFFFF] px-4 py-2 text-sm font-medium text-[#6c757d] transition hover:bg-[#F9FAFB]"
               >
                 Back
               </button>
 
-              {step < steps.length - 1 ? (
-                <button type="button" onClick={nextStep} className="rounded-md bg-[#2f80ed] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f6fd6]">
-                  Continue
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMethod(null)}
+                  className="rounded-md border border-[#2F80ED] bg-white px-4 py-2 text-sm font-semibold text-[#2F80ED] transition duration-200 hover:bg-[#2F80ED] hover:text-white"
+                >
+                  Change Method
                 </button>
-              ) : (
-                <button type="submit" className="rounded-md bg-[#22c55e] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#16a34a]">
-                  Save Client
-                </button>
-              )}
+                {step < steps.length - 1 ? (
+                  <button type="button" onClick={nextStep} className="rounded-md bg-[#2F80ED] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f6fd6]">
+                    Continue
+                  </button>
+                ) : (
+                  <button type="submit" className="rounded-md bg-[#15803D] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#166534]">
+                    Create Client & Attach Case
+                  </button>
+                )}
+              </div>
             </div>
           </form>
         )}

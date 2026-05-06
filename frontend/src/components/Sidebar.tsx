@@ -48,13 +48,13 @@ export default function Sidebar() {
 
   const itemClass = (path: string) =>
     location.pathname === path || (path !== "/dashboard" && location.pathname.startsWith(path))
-      ? "bg-[#2f80ed] text-white"
-      : "text-[#6b7280] hover:bg-[#2f80ed] hover:text-white";
+      ? "bg-[#2f80ed] text-white shadow-sm"
+      : "text-[#6b7280] hover:-translate-y-px hover:bg-[#2f80ed] hover:text-white hover:shadow-sm";
 
   return (
-    <aside className="border-b border-[#e5e7eb] bg-[#f5f5f5] px-5 py-5 lg:min-h-screen lg:w-56 lg:border-b-0 lg:border-r">
+    <aside className="border-b border-[#e5e7eb] bg-[#f5f5f5] px-5 py-5 lg:min-h-screen lg:w-60 lg:border-b-0 lg:border-r">
       <div className="mb-4">
-        <h1 className="text-xl font-bold text-[#1f2937]">PAO Admin</h1>
+        <h1 className="text-xl font-bold text-[#1f2937]">JurisGuard</h1>
       </div>
 
       <nav className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-0 lg:overflow-visible">
@@ -72,7 +72,7 @@ export default function Sidebar() {
         ))}
         <button
           onClick={logout}
-          className="mt-3 flex h-[42px] items-center gap-2 rounded-[10px] px-3.5 text-left text-sm font-medium text-[#dc3545] transition duration-200 hover:bg-[#2f80ed] hover:text-white"
+          className="mt-3 flex h-[42px] items-center gap-2 rounded-[10px] px-3.5 text-left text-sm font-medium text-[#dc3545] transition duration-200 hover:-translate-y-px hover:bg-[#2f80ed] hover:text-white hover:shadow-sm"
         >
           <LogoutIcon />
           Logout

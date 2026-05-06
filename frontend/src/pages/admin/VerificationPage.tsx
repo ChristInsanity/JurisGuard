@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import { listApplicants, updateApplicantApproval } from "../../services/adminService";
 import type { AdminUserListItem, ApprovalStatus } from "../../types/auth";
@@ -13,11 +12,11 @@ const statusLabel: Record<ApprovalStatus, string> = {
 };
 
 const statusClass: Record<ApprovalStatus, string> = {
-  pending: "bg-[#DBEAFE] text-[#1D4ED8]",
-  under_review: "bg-[#FEF3C7] text-[#B45309]",
-  approved: "bg-[#DCFCE7] text-[#15803D]",
-  rejected: "bg-[#FEE2E2] text-[#B91C1C]",
-  suspended: "bg-[#FEE2E2] text-[#B91C1C]",
+  pending: "bg-amber-100 text-amber-800 ring-amber-200",
+  under_review: "bg-[#F3F4F6] text-[#374151] ring-[#D1D5DB]",
+  approved: "bg-[#DCFCE7] text-[#166534] ring-[#15803D]/25",
+  rejected: "bg-[#FEE2E2] text-[#991B1B] ring-[#DC2626]/20",
+  suspended: "bg-[#E5E7EB] text-[#111827] ring-[#9CA3AF]/30",
 };
 
 function initials(name: string, email: string) {
@@ -33,11 +32,23 @@ function initials(name: string, email: string) {
 
 function formatDate(value: string | null) {
   if (!value) return "Not yet";
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+    new Date(value)
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-[#111827]">{value}</p>
+    </div>
+  );
 }
 
 export default function VerificationPage() {
   const [users, setUsers] = useState<AdminUserListItem[]>([]);
+  const [selectedUser, setSelectedUser] = useState<AdminUserListItem | null>(null);
   const [filter, setFilter] = useState<ApprovalStatus | "all">("pending");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +58,8 @@ export default function VerificationPage() {
     let cancelled = false;
 
     async function loadUsers() {
+      setIsLoading(true);
+      setError("");
       try {
         const rows = await listApplicants(filter === "all" ? undefined : filter);
         if (!cancelled) setUsers(rows);
@@ -64,15 +77,23 @@ export default function VerificationPage() {
     };
   }, [filter]);
 
-  const activeCount = useMemo(() => users.length, [users.length]);
+  const requestCount = useMemo(() => users.length, [users.length]);
+
+  const refreshUsers = async () => {
+    const rows = await listApplicants(filter === "all" ? undefined : filter);
+    setUsers(rows);
+    if (selectedUser && !rows.some((user) => user.user_id === selectedUser.user_id)) {
+      setSelectedUser(null);
+    }
+  };
 
   const changeStatus = async (userId: number, approvalStatus: ApprovalStatus) => {
     setUpdatingId(userId);
     setError("");
     try {
-      await updateApplicantApproval(userId, approvalStatus);
-      const rows = await listApplicants(filter === "all" ? undefined : filter);
-      setUsers(rows);
+      const updated = await updateApplicantApproval(userId, approvalStatus);
+      setSelectedUser((current) => (current?.user_id === userId ? updated : current));
+      await refreshUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update user");
     } finally {
@@ -84,37 +105,36 @@ export default function VerificationPage() {
     <MainLayout>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#111827]">Admin Verification</h1>
-          <nav className="mt-1 flex items-center gap-2 text-sm text-[#6B7280]">
-            <span>Dashboard</span>
-            <span>/</span>
-            <span className="text-[#111827]">Verification</span>
-          </nav>
+          <p className="text-sm font-semibold text-[#2F80ED]">Application Review</p>
+          <h1 className="text-2xl font-semibold text-[#111827]">User Verification</h1>
+          <p className="mt-1 text-sm text-[#6B7280]">
+            Review account requests and approve users before they can access JurisGuard.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={filter}
             onChange={(event) => setFilter(event.target.value as ApprovalStatus | "all")}
-            className="rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
+            className="h-10 rounded-md border border-[#D1D5DB] bg-white px-3 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/20"
           >
             <option value="pending">Pending</option>
             <option value="under_review">Under Review</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
             <option value="suspended">Suspended</option>
-            <option value="all">All Users</option>
+            <option value="all">All Applications</option>
           </select>
-          <span className="rounded-full bg-[#DBEAFE] px-3 py-1 text-xs font-semibold text-[#1D4ED8]">
-            {activeCount}
+          <span className="rounded-full bg-[#111827] px-3 py-1 text-xs font-semibold text-white">
+            {requestCount}
           </span>
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white shadow-sm shadow-[#111827]/5">
-        <div className="border-b border-[#E5E7EB] px-5 py-4">
-          <h2 className="text-base font-semibold text-[#111827]">User Applications</h2>
+      <section className="overflow-hidden rounded-lg border border-[#E5E7EB] bg-white shadow-sm shadow-[#111827]/10">
+        <div className="border-b border-[#E5E7EB] bg-white px-5 py-4">
+          <h2 className="text-base font-semibold text-[#111827]">Account Requests</h2>
           <p className="mt-1 text-sm text-[#6B7280]">
-            Review registrations and update approval status.
+            Only user applications are listed here; admin accounts are excluded from this queue.
           </p>
         </div>
 
@@ -124,74 +144,163 @@ export default function VerificationPage() {
           </div>
         )}
 
-        <div className="divide-y divide-[#E5E7EB]">
-          {isLoading ? (
-            <div className="px-5 py-10 text-center text-sm text-[#6B7280]">Loading users...</div>
-          ) : users.length === 0 ? (
-            <div className="px-5 py-10 text-center text-sm text-[#6B7280]">No users found.</div>
-          ) : (
-            users.map((user) => (
-              <div
-                key={user.user_id}
-                className="grid gap-4 px-5 py-4 transition hover:bg-[#F9FAFB] lg:grid-cols-[1fr_auto]"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2F80ED] text-sm font-semibold text-white">
-                    {initials(user.full_name, user.email)}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-[#111827]">
-                        {user.full_name || "Profile pending"}
-                      </p>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass[user.approval_status]}`}>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
+            <thead className="sticky top-0 z-10 border-b border-[#E5E7EB] bg-[#F3F4F6] text-xs uppercase tracking-wide text-[#374151]">
+              <tr>
+                <th className="px-5 py-3 text-left font-semibold">Applicant</th>
+                <th className="px-5 py-3 text-left font-semibold">Role</th>
+                <th className="px-5 py-3 text-left font-semibold">Date Requested</th>
+                <th className="px-5 py-3 text-left font-semibold">Status</th>
+                <th className="px-5 py-3 text-right font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E5E7EB]">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-10 text-center text-[#6B7280]">
+                    Loading applications...
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-10 text-center text-[#6B7280]">
+                    No applications found.
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr key={user.user_id} className="bg-white transition duration-200 hover:bg-gray-50">
+                    <td className="px-5 py-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111827] text-sm font-semibold text-white">
+                          {initials(user.full_name, user.email)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-[#111827]">
+                            {user.full_name || "Name not provided"}
+                          </p>
+                          <p className="mt-1 truncate text-[#6B7280]">{user.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 capitalize text-[#111827]">{user.role}</td>
+                    <td className="px-5 py-4 text-[#111827]">{formatDate(user.created_at)}</td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClass[user.approval_status]}`}>
                         {statusLabel[user.approval_status]}
                       </span>
-                      <span className="rounded-full border border-[#E5E7EB] px-2.5 py-1 text-xs font-semibold text-[#111827]">
-                        {user.role}
-                      </span>
-                    </div>
-                    <p className="mt-1 truncate text-sm text-[#6B7280]">{user.email}</p>
-                    <p className="mt-1 text-xs text-[#6B7280]">
-                      Registered {formatDate(user.created_at)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <Link
-                    to={`/admin/users/${user.user_id}`}
-                    className="rounded-md border border-[#2F80ED] bg-white px-3 py-2 text-sm font-semibold text-[#2F80ED] transition hover:bg-[#2F80ED] hover:text-white"
-                  >
-                    View
-                  </Link>
-                  <button
-                    onClick={() => changeStatus(user.user_id, "approved")}
-                    disabled={updatingId === user.user_id}
-                    className="rounded-md bg-[#22C55E] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#16A34A] disabled:opacity-60"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => changeStatus(user.user_id, "rejected")}
-                    disabled={updatingId === user.user_id}
-                    className="rounded-md border border-[#DC3545] bg-white px-3 py-2 text-sm font-semibold text-[#DC3545] transition hover:bg-[#DC3545] hover:text-white disabled:opacity-60"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => changeStatus(user.user_id, "suspended")}
-                    disabled={updatingId === user.user_id}
-                    className="rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-sm font-semibold text-[#111827] transition hover:bg-[#F9FAFB] disabled:opacity-60"
-                  >
-                    Suspend
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUser(user)}
+                          className="rounded-md border border-[#111827] bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] transition hover:bg-[#111827] hover:text-white"
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => changeStatus(user.user_id, "under_review")}
+                          disabled={updatingId === user.user_id}
+                          className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition duration-200 hover:bg-amber-50 disabled:opacity-60"
+                        >
+                          Review
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => changeStatus(user.user_id, "approved")}
+                          disabled={updatingId === user.user_id}
+                          className="rounded-md bg-[#15803D] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#166534] disabled:opacity-60"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => changeStatus(user.user_id, "rejected")}
+                          disabled={updatingId === user.user_id}
+                          className="rounded-md border border-[#DC2626] bg-white px-3 py-1.5 text-xs font-semibold text-[#B91C1C] transition hover:bg-[#DC2626] hover:text-white disabled:opacity-60"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
+
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/45 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-lg animate-[modalIn_200ms_ease-out] overflow-hidden rounded-lg border border-[#E5E7EB] bg-white shadow-2xl shadow-[#111827]/20">
+            <div className="flex items-start justify-between gap-4 border-b border-[#E5E7EB] bg-[#F3F4F6] px-5 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#2F80ED]">
+                  Account Request
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-[#111827]">
+                  {selectedUser.full_name || "Name not provided"}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedUser(null)}
+                className="rounded-md px-2 py-1 text-sm font-semibold text-[#6B7280] transition duration-200 hover:bg-white hover:text-[#111827]"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="space-y-5 bg-white p-5">
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClass[selectedUser.approval_status]}`}>
+                {statusLabel[selectedUser.approval_status]}
+              </span>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Full Name" value={selectedUser.full_name || "Not provided"} />
+                <Field label="Role" value={selectedUser.role} />
+                <div className="sm:col-span-2">
+                  <Field label="Email" value={selectedUser.email} />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field label="Date Requested" value={formatDate(selectedUser.created_at)} />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-2 border-t border-[#E5E7EB] bg-[#F3F4F6] px-5 py-4 -mx-5 -mb-5">
+                <button
+                  type="button"
+                  onClick={() => changeStatus(selectedUser.user_id, "under_review")}
+                  disabled={updatingId === selectedUser.user_id}
+                  className="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-700 transition duration-200 hover:bg-amber-50 disabled:opacity-60"
+                >
+                  Mark Under Review
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeStatus(selectedUser.user_id, "approved")}
+                  disabled={updatingId === selectedUser.user_id}
+                  className="rounded-md bg-[#15803D] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#166534] disabled:opacity-60"
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeStatus(selectedUser.user_id, "rejected")}
+                  disabled={updatingId === selectedUser.user_id}
+                  className="rounded-md border border-[#DC2626] bg-white px-4 py-2 text-sm font-semibold text-[#B91C1C] transition hover:bg-[#DC2626] hover:text-white disabled:opacity-60"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }

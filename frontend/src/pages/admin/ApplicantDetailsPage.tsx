@@ -5,7 +5,7 @@ import { getApplicant, updateApplicantApproval } from "../../services/adminServi
 import type { AdminUserDetails, ApprovalStatus } from "../../types/auth";
 
 const statusClass: Record<ApprovalStatus, string> = {
-  pending: "bg-[#DBEAFE] text-[#1D4ED8]",
+  pending: "bg-[#FFF7D6] text-[#92400E]",
   under_review: "bg-[#FEF3C7] text-[#B45309]",
   approved: "bg-[#DCFCE7] text-[#15803D]",
   rejected: "bg-[#FEE2E2] text-[#B91C1C]",
@@ -136,14 +136,14 @@ export default function ApplicantDetailsPage() {
               <button
                 onClick={() => changeStatus("approved")}
                 disabled={isUpdating}
-                className="rounded-md bg-[#22C55E] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#16A34A] disabled:opacity-60"
+                className="rounded-md bg-[#15803D] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#166534] disabled:opacity-60"
               >
                 Approve
               </button>
               <button
                 onClick={() => changeStatus("rejected")}
                 disabled={isUpdating}
-                className="rounded-md border border-[#DC3545] bg-white px-4 py-2.5 text-sm font-semibold text-[#DC3545] transition hover:bg-[#DC3545] hover:text-white disabled:opacity-60"
+                className="rounded-md border border-[#DC2626] bg-white px-4 py-2.5 text-sm font-semibold text-[#DC2626] transition hover:bg-[#DC2626] hover:text-white disabled:opacity-60"
               >
                 Reject
               </button>

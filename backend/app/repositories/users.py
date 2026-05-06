@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import ApprovalStatus, User
+from app.models import ApprovalStatus, User, UserRole
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
@@ -15,9 +15,12 @@ def list_users(
     db: Session,
     *,
     approval_status: ApprovalStatus | None = None,
+    role: UserRole | None = None,
     limit: int = 500,
 ) -> list[User]:
     query = db.query(User).options(joinedload(User.details)).order_by(User.created_at.desc())
     if approval_status:
         query = query.filter(User.approval_status == approval_status)
+    if role:
+        query = query.filter(User.role == role)
     return query.limit(limit).all()

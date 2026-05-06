@@ -44,14 +44,14 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F9FAFB] px-4 py-10">
-      <div className="w-full max-w-lg rounded-lg border border-[#E5E7EB] bg-white p-8 shadow-sm shadow-[#111827]/5">
+      <div className="w-full max-w-lg rounded-lg border border-[#E5E7EB] bg-white p-8 shadow-sm shadow-[#111827]/10">
         <div className="mb-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#2F80ED]">
             JurisGuard
           </p>
           <h1 className="mt-2 text-2xl font-bold text-[#111827]">Create Account</h1>
           <p className="mt-2 text-sm text-[#6B7280]">
-            New accounts use the backend registration endpoint and do not auto-login.
+            Your account request must be approved by an admin before access is enabled.
           </p>
         </div>
 
@@ -60,7 +60,7 @@ export default function RegisterPage() {
             <span className="text-sm font-medium text-[#111827]">Full Name</span>
             <input
               type="text"
-              className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
+              className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/20"
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
               autoComplete="name"
@@ -72,7 +72,7 @@ export default function RegisterPage() {
             <span className="text-sm font-medium text-[#111827]">Email</span>
             <input
               type="email"
-              className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
+              className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/20"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
@@ -85,7 +85,7 @@ export default function RegisterPage() {
               <span className="text-sm font-medium text-[#111827]">Password</span>
               <input
                 type="password"
-                className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
+                className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/20"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="new-password"
@@ -98,7 +98,7 @@ export default function RegisterPage() {
               <span className="text-sm font-medium text-[#111827]">Confirm Password</span>
               <input
                 type="password"
-                className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
+                className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/20"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 autoComplete="new-password"
@@ -131,7 +131,7 @@ export default function RegisterPage() {
 
         <p className="mt-5 text-center text-sm text-[#6B7280]">
           Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-[#2F80ED] hover:text-[#1f6fd6]">
+          <Link to="/login" className="font-semibold text-[#111827] hover:text-[#2F80ED]">
             Login
           </Link>
         </p>

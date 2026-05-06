@@ -22,7 +22,7 @@ def list_applicants(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles(UserRole.admin)),
 ):
-    rows = user_repo.list_users(db, approval_status=approval_status)
+    rows = user_repo.list_users(db, approval_status=approval_status, role=UserRole.user)
     return [user_service.user_to_admin_list_item(row) for row in rows]
 
 

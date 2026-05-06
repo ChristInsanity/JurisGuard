@@ -44,7 +44,7 @@ class UserProfileOut(BaseModel):
 
 class UserOut(BaseModel):
     user_id: int
-    email: EmailStr
+    email: str
     role: UserRole
     approval_status: ApprovalStatus
     full_name: str

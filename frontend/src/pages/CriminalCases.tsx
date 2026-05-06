@@ -2,19 +2,23 @@ import { useMemo, useState } from "react";
 import MainLayout from "../layouts/MainLayout";
 import AddCaseModal from "../components/modals/AddCaseModal";
 import AddClientModal from "../components/modals/AddClientModal";
+import ExportCsvModal from "../components/modals/ExportCsvModal";
 import { StatusBadge } from "../features/criminalCases/components/StatusBadge";
 import { useCriminalCasesStore } from "../features/criminalCases/criminalCasesStore";
+import {
+  filterCriminalCaseRows,
+  type CaseTableFilter,
+  type CriminalCaseRow,
+} from "../services/exportService";
 import type { CaseStatus, ClientRecord, CriminalCaseRecord } from "../types";
 
 const accordionBorderClass: Record<CaseStatus, string> = {
-  Pending: "border-l-[#2f80ed]",
-  Ongoing: "border-l-[#2f80ed]",
-  Terminated: "border-l-[#dc3545]",
+  Pending: "border-l-amber-400",
+  Ongoing: "border-l-[#2F80ED]",
+  Terminated: "border-l-[#DC2626]",
 };
 
-type CaseFilter = "all" | "urban" | "rural" | "male" | "female" | "terminated";
-
-const filterOptions: Array<{ value: CaseFilter; label: string }> = [
+const filterOptions: Array<{ value: CaseTableFilter; label: string }> = [
   { value: "all", label: "All Cases" },
   { value: "urban", label: "Urban" },
   { value: "rural", label: "Rural" },
@@ -68,8 +72,8 @@ function CaseFilterSelect({
   value,
   onChange,
 }: {
-  value: CaseFilter;
-  onChange: (value: CaseFilter) => void;
+  value: CaseTableFilter;
+  onChange: (value: CaseTableFilter) => void;
 }) {
   const selected = filterOptions.find((option) => option.value === value) ?? filterOptions[0];
 
@@ -79,7 +83,7 @@ function CaseFilterSelect({
       <select
         className="h-8 min-w-32 bg-white text-sm font-medium text-[#111827] outline-none"
         value={value}
-        onChange={(event) => onChange(event.target.value as CaseFilter)}
+        onChange={(event) => onChange(event.target.value as CaseTableFilter)}
         aria-label="Filter criminal cases"
       >
         {filterOptions.map((option) => (
@@ -88,7 +92,7 @@ function CaseFilterSelect({
           </option>
         ))}
       </select>
-      <span className="hidden rounded-full bg-[#f1f1f1] px-2 py-0.5 text-xs font-medium text-[#6b7280] lg:inline-flex">
+      <span className="hidden rounded-full bg-[#F9FAFB] px-2 py-0.5 text-xs font-medium text-[#6b7280] lg:inline-flex">
         {selected.label}
       </span>
     </div>
@@ -103,7 +107,7 @@ function CaseAccordion({ record }: { record: CriminalCaseRecord }) {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-[#f8f9fa]"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-[#F9FAFB]"
       >
         <div>
           <p className="text-sm font-semibold text-[#111827]">{record.intake_record.control_no}</p>
@@ -165,9 +169,9 @@ function ClientRecordModal({
   if (!client) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/30 px-4 py-6 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-2xl shadow-[#111827]/10">
-        <div className="flex items-center justify-between gap-4 border-b border-[#e5e7eb] px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/30 px-4 py-6 backdrop-blur-sm transition-opacity duration-200">
+      <div className="max-h-[92vh] w-full max-w-5xl animate-[modalIn_200ms_ease-out] overflow-hidden rounded-lg border border-[#E5E7EB] bg-white shadow-2xl shadow-[#111827]/10">
+        <div className="flex items-center justify-between gap-4 border-b border-[#E5E7EB] bg-[#F3F4F6] px-6 py-4">
           <div>
             <h2 className="text-lg font-semibold text-[#111827]">
               {mode === "view" ? "Criminal Case Record" : "Edit Record"}
@@ -183,13 +187,13 @@ function ClientRecordModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-[#111827]/60 transition hover:bg-[#F9FAFB] hover:text-[#111827]"
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-[#6B7280] transition duration-200 hover:bg-white hover:text-[#111827]"
           >
             Close
           </button>
         </div>
 
-        <div className="max-h-[calc(92vh-90px)] overflow-y-auto px-6 py-5">
+        <div className="max-h-[calc(92vh-90px)] overflow-y-auto bg-white px-6 py-5">
           <section className="rounded-[14px] border border-[#e5e7eb] bg-white p-5 shadow-sm shadow-[#111827]/5">
             <h3 className="text-base font-semibold text-[#111827]">Person Information</h3>
             <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-5">
@@ -229,13 +233,14 @@ export default function CriminalCasesPage() {
   const clients = useCriminalCasesStore((state) => state.clients);
   const cases = useCriminalCasesStore((state) => state.cases);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<CaseFilter>("all");
+  const [filter, setFilter] = useState<CaseTableFilter>("all");
   const [showCaseModal, setShowCaseModal] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [actionMode, setActionMode] = useState<"view" | "edit">("view");
 
-  const rows = useMemo(
+  const rows = useMemo<CriminalCaseRow[]>(
     () =>
       cases.map((record) => {
         const client = clients.find((item) => item.client_id === record.client_id);
@@ -248,31 +253,10 @@ export default function CriminalCasesPage() {
     [cases, clients]
   );
 
-  const filteredRows = useMemo(() => {
-    const normalized = search.toLowerCase();
-    return rows.filter(({ record, clientName, client }) => {
-      const matchesSearch = [
-        clientName,
-        record.intake_record.control_no,
-        record.cases.title_of_case,
-        record.cases.case_no,
-        record.cases.status_of_case,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalized);
-
-      const matchesFilter =
-        filter === "all" ||
-        (filter === "urban" && record.cases.location_type === "Urban") ||
-        (filter === "rural" && record.cases.location_type === "Rural") ||
-        (filter === "male" && client?.client.sex === "Male") ||
-        (filter === "female" && client?.client.sex === "Female") ||
-        (filter === "terminated" && record.cases.status_of_case === "Terminated");
-
-      return matchesSearch && matchesFilter;
-    });
-  }, [filter, rows, search]);
+  const filteredRows = useMemo(
+    () => filterCriminalCaseRows(rows, { search, table_filter: filter }),
+    [filter, rows, search]
+  );
 
   const activeClient = clients.find((client) => client.client_id === activeClientId) ?? null;
   const activeCases = cases.filter((record) => record.client_id === activeClientId);
@@ -298,7 +282,7 @@ export default function CriminalCasesPage() {
           <button
             type="button"
             onClick={() => setShowCaseModal(true)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[#2f80ed] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f6fd6]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[#2F80ED] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f6fd6]"
           >
             <PlusIcon />
             Add Case
@@ -306,7 +290,7 @@ export default function CriminalCasesPage() {
           <button
             type="button"
             onClick={() => setShowClientModal(true)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[#22c55e] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#16a34a]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[#15803D] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#166534]"
           >
             <UserPlusIcon />
             Add Client
@@ -314,22 +298,29 @@ export default function CriminalCasesPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[14px] border border-[#e5e7eb] bg-white p-5">
+      <div className="overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white p-5">
         <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <CaseFilterSelect value={filter} onChange={setFilter} />
             <div className="flex items-center gap-2">
               <span className="font-semibold text-[#6b7280]">Total:</span>
-              <span className="rounded-md bg-[#2f80ed] px-2.5 py-1 text-base font-semibold leading-none text-white">
+              <span className="rounded-md bg-[#2F80ED] px-2.5 py-1 text-base font-semibold leading-none text-white">
                 {filteredRows.length}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowExportModal(true)}
+              className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[#2F80ED] px-4 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#1f6fd6]"
+            >
+              Export CSV
+            </button>
           </div>
 
           <input
             type="text"
             placeholder="Search case..."
-            className="h-10 w-full rounded-md border border-[#e5e7eb] bg-white px-3 text-sm text-[#111827] outline-none transition placeholder:text-[#6b7280] focus:border-[#2f80ed] focus:ring-2 focus:ring-[#2f80ed]/15 lg:w-1/4"
+            className="h-10 w-full rounded-md border border-[#e5e7eb] bg-white px-3 text-sm text-[#111827] outline-none transition placeholder:text-[#6b7280] focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15 lg:w-1/4"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -337,7 +328,7 @@ export default function CriminalCasesPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1040px] text-sm">
-            <thead className="border-b border-[#e5e7eb] text-[0.85rem] text-[#6b7280]">
+            <thead className="sticky top-0 z-10 border-b border-[#E5E7EB] bg-[#F3F4F6] text-[0.85rem] text-[#374151]">
               <tr>
                 <th className="px-3 py-3 text-left font-semibold">Control No.</th>
                 <th className="px-3 py-3 text-left font-semibold">Party Represented</th>
@@ -357,7 +348,7 @@ export default function CriminalCasesPage() {
                 </tr>
               ) : (
                 filteredRows.map(({ record, client, clientName }) => (
-                  <tr key={record.case_id} className="transition hover:bg-[#F9FAFB]">
+                  <tr key={record.case_id} className="bg-white transition duration-200 hover:bg-gray-50">
                     <td className="px-3 py-4 text-[#111827]">{record.intake_record.control_no}</td>
                     <td className="px-3 py-4 text-[#111827]/80">{record.intake_record.party_represented}</td>
                     <td className="px-3 py-4 text-[#111827]/80">{client?.client.sex ?? "-"}</td>
@@ -371,7 +362,7 @@ export default function CriminalCasesPage() {
                         <button
                           type="button"
                           onClick={() => openRecord(record, "view")}
-                          className="inline-flex items-center gap-1.5 rounded-md border border-[#2f80ed] bg-white px-3 py-1.5 text-xs font-semibold text-[#2f80ed] transition hover:bg-[#2f80ed] hover:text-white"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-[#2F80ED] bg-white px-3 py-1.5 text-xs font-semibold text-[#2F80ED] transition duration-200 hover:-translate-y-px hover:bg-[#2F80ED] hover:text-white"
                         >
                           <EyeIcon />
                           View
@@ -379,7 +370,7 @@ export default function CriminalCasesPage() {
                         <button
                           type="button"
                           onClick={() => openRecord(record, "edit")}
-                          className="rounded-md border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs font-semibold text-[#6b7280] transition hover:bg-[#f1f1f1]"
+                          className="rounded-md border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#6B7280] transition duration-200 hover:-translate-y-px hover:bg-gray-50"
                         >
                           Edit
                         </button>
@@ -395,6 +386,11 @@ export default function CriminalCasesPage() {
 
       <AddClientModal isOpen={showClientModal} onClose={() => setShowClientModal(false)} />
       <AddCaseModal isOpen={showCaseModal} onClose={() => setShowCaseModal(false)} />
+      <ExportCsvModal
+        isOpen={showExportModal}
+        rows={rows}
+        onClose={() => setShowExportModal(false)}
+      />
       <ClientRecordModal
         mode={actionMode}
         client={activeClient}

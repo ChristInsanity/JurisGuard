@@ -1,9 +1,9 @@
 import type { CaseStatus } from "../../../types";
 
 const statusClass: Record<CaseStatus, string> = {
-  Pending: "bg-[#2f80ed] text-white",
-  Ongoing: "bg-[#2f80ed] text-white",
-  Terminated: "bg-[#dc3545] text-white",
+  Pending: "bg-amber-100 text-amber-800",
+  Ongoing: "bg-blue-100 text-blue-700",
+  Terminated: "bg-[#DC2626] text-white",
 };
 
 export function StatusBadge({ status }: { status: CaseStatus }) {
