@@ -30,7 +30,7 @@ pip install -r requirements-ocr.txt
 
 ### 4) Run the API
 ```powershell
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8010
+~python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8010~
 ```
 
 Open:

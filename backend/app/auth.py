@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
-from app.models import User, UserRole
+from app.models import ApprovalStatus, User, UserRole
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
@@ -21,9 +21,16 @@ def hash_password(plain: str) -> str:
     return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def create_access_token(sub: str, role: UserRole) -> str:
+def create_access_token(user: User) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
-    payload = {"sub": sub, "role": role.value, "exp": expire}
+    payload = {
+        "sub": user.email,
+        "user_id": user.user_id,
+        "email": user.email,
+        "role": user.role.value,
+        "approval_status": user.approval_status.value,
+        "exp": expire,
+    }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
@@ -38,13 +45,17 @@ def get_current_user(
     )
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        user_id: int | None = payload.get("user_id")
         sub: str | None = payload.get("sub")
-        if sub is None:
+        if user_id is None and sub is None:
             raise credentials_exc
     except JWTError as e:
         raise credentials_exc from e
-    user = db.query(User).filter(User.email == sub).first()
-    if not user or not user.is_active:
+    query = db.query(User)
+    user = query.filter(User.user_id == user_id).first() if user_id is not None else None
+    if not user and sub:
+        user = query.filter(User.email == sub).first()
+    if not user or not user.is_active or user.approval_status != ApprovalStatus.approved:
         raise credentials_exc
     return user
 

@@ -30,18 +30,19 @@ def create_case(
     body: LegalCaseCreate,
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.encoder, UserRole.attorney, UserRole.admin)),
+    user: User = Depends(require_roles(UserRole.user, UserRole.admin)),
 ):
     if db.query(LegalCase).filter(LegalCase.control_number == body.control_number).first():
         raise HTTPException(status_code=400, detail="Control number already exists")
-    row = LegalCase(**body.model_dump())
+    row = LegalCase(**body.model_dump(), created_by_user_id=user.user_id)
     db.add(row)
     db.commit()
     db.refresh(row)
     append_audit(
         db,
-        user_id=user.id,
+        user_id=user.user_id,
         action="case.create",
+        module="cases",
         entity_type="legal_case",
         entity_id=str(row.id),
         detail=body.control_number,

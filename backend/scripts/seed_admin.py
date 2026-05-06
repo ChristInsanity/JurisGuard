@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.database import Base, SessionLocal, engine
-from app.models import User, UserRole
+from app.models import ApprovalStatus, User, UserDetails, UserRole
 from app.auth import hash_password
 
 
@@ -23,9 +23,15 @@ def main():
             return
         u = User(
             email=email,
-            full_name="System Administrator",
-            hashed_password=hash_password(password),
+            password_hash=hash_password(password),
             role=UserRole.admin,
+            approval_status=ApprovalStatus.approved,
+            is_active=True,
+            details=UserDetails(
+                first_name="System",
+                last_name="Administrator",
+                profile_completed=True,
+            ),
         )
         db.add(u)
         db.commit()

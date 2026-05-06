@@ -2,9 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* RESET DEFAULT VITE STYLES */
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
+}
+
+body {
+  background: #f1f1f1;
+  color: #111827;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  background: #ffffff;
 }

@@ -1,44 +1,34 @@
-import hashlib
-from datetime import datetime, timezone
-from typing import Optional
+import json
+from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import AuditLog
 
 
-def _hash_entry(prev_hash: Optional[str], payload: str) -> str:
-    h = hashlib.sha256()
-    if prev_hash:
-        h.update(prev_hash.encode())
-    h.update(payload.encode())
-    h.update(datetime.now(timezone.utc).isoformat().encode())
-    return h.hexdigest()
-
-
 def append_audit(
     db: Session,
     *,
-    user_id: Optional[int],
+    user_id: int | None,
     action: str,
     entity_type: str,
-    entity_id: Optional[str],
-    detail: Optional[str] = None,
-    ip_address: Optional[str] = None,
+    entity_id: str | None,
+    module: str = "system",
+    metadata: dict[str, Any] | None = None,
+    detail: str | None = None,
+    ip_address: str | None = None,
 ) -> AuditLog:
-    last = db.scalars(select(AuditLog).order_by(AuditLog.id.desc()).limit(1)).first()
-    prev = last.entry_hash if last else None
-    payload = f"{user_id}|{action}|{entity_type}|{entity_id}|{detail or ''}"
-    entry_hash = _hash_entry(prev, payload)
+    metadata_payload = metadata.copy() if metadata else {}
+    if detail:
+        metadata_payload["detail"] = detail
+
     row = AuditLog(
         user_id=user_id,
         action=action,
+        module=module,
         entity_type=entity_type,
         entity_id=entity_id,
-        detail=detail,
-        prev_hash=prev,
-        entry_hash=entry_hash,
+        metadata_json=json.dumps(metadata_payload) if metadata_payload else None,
         ip_address=ip_address,
     )
     db.add(row)

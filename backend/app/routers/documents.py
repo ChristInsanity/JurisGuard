@@ -33,7 +33,7 @@ async def ocr_upload(
     case_id: int | None = Form(None),
     persist: str = Form("true"),
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.encoder, UserRole.reviewer, UserRole.admin)),
+    user: User = Depends(require_roles(UserRole.user, UserRole.admin)),
 ):
     persist_flag = persist.lower() in ("1", "true", "yes", "on")
     ext = Path(file.filename or "scan").suffix or ".png"
@@ -99,14 +99,16 @@ async def ocr_upload(
         ocr_raw_text=raw,
         extracted_json=json.dumps(suggested),
         verified=False,
+        created_by_user_id=user.user_id,
     )
     db.add(row)
     db.commit()
     db.refresh(row)
     append_audit(
         db,
-        user_id=user.id,
+        user_id=user.user_id,
         action="document.ocr",
+        module="ocr",
         entity_type="case_document",
         entity_id=str(row.id),
         ip_address=client_ip(request),
@@ -133,7 +135,7 @@ def verify_document(
     doc_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.reviewer, UserRole.attorney, UserRole.admin)),
+    user: User = Depends(require_roles(UserRole.user, UserRole.admin)),
 ):
     row = db.query(CaseDocument).filter(CaseDocument.id == doc_id).first()
     if not row:
@@ -141,13 +143,14 @@ def verify_document(
     from datetime import datetime, timezone
 
     row.verified = True
-    row.verified_by_user_id = user.id
+    row.verified_by_user_id = user.user_id
     row.verified_at = datetime.now(timezone.utc)
     db.commit()
     append_audit(
         db,
-        user_id=user.id,
+        user_id=user.user_id,
         action="document.verify",
+        module="ocr",
         entity_type="case_document",
         entity_id=str(row.id),
         ip_address=client_ip(request),

@@ -29,16 +29,17 @@ def create_client(
     body: ClientCreate,
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.encoder, UserRole.attorney, UserRole.admin)),
+    user: User = Depends(require_roles(UserRole.user, UserRole.admin)),
 ):
-    row = Client(**body.model_dump())
+    row = Client(**body.model_dump(), created_by_user_id=user.user_id)
     db.add(row)
     db.commit()
     db.refresh(row)
     append_audit(
         db,
-        user_id=user.id,
+        user_id=user.user_id,
         action="client.create",
+        module="clients",
         entity_type="client",
         entity_id=str(row.id),
         ip_address=client_ip(request),

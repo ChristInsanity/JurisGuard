@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import Base, engine
 from app.ocr_service import get_ocr_status
-from app.routers import auth, cases, clients, documents
+from app.routers import admin, auth, cases, clients, documents
 
 
 
@@ -30,6 +30,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 app.include_router(cases.router, prefix="/api")
 app.include_router(clients.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
