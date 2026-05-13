@@ -29,6 +29,8 @@ const createDefaultValues = (clientId = ""): CaseFormValues => ({
     region: "",
     district_office: "",
     party_represented: "",
+    applicant_role: "",
+    applicant_role_other: "",
     nature_of_request: "",
     nature_of_case: "",
   },
@@ -42,6 +44,7 @@ const createDefaultValues = (clientId = ""): CaseFormValues => ({
     relationship_to_applicant: "",
   },
   adverse_party: {
+    role: "",
     name: "",
     address: "",
   },
@@ -55,6 +58,8 @@ const createDefaultValues = (clientId = ""): CaseFormValues => ({
     place_of_detention: "",
     location_type: "",
     cause_of_action: "",
+    facts_of_case: "",
+    pending_in_court: false,
     cause_of_termination: "",
     date_of_termination: "",
   },
@@ -68,6 +73,7 @@ const caseOcrPayload: CaseOcrPayload = {
     case_no: "CR-148-26",
     court_body: "Regional Trial Court Branch 12",
     title_of_case: "People of the Philippines vs. Santos",
+    facts_of_case: "The case involves a complaint pending review before the court.",
     cause_of_action: "Criminal complaint for qualified theft",
     status_of_case: "Ongoing",
     cause_of_termination: "",
@@ -80,6 +86,7 @@ const caseOcrFields = [
   "cases.case_no",
   "cases.court_body",
   "cases.title_of_case",
+  "cases.facts_of_case",
   "cases.cause_of_action",
   "cases.status_of_case",
   "cases.cause_of_termination",
@@ -113,6 +120,33 @@ function TextInput({
       <input
         type={type}
         {...registration}
+        className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition duration-200 focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
+      />
+      <FieldError message={error} />
+    </label>
+  );
+}
+
+function TextArea({
+  label,
+  registration,
+  error,
+  status,
+}: {
+  label: string;
+  registration: UseFormRegisterReturn;
+  error?: string;
+  status?: ExtractionMap[string];
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-[#111827]/80">
+        {label}
+        <FieldStatus status={status} />
+      </span>
+      <textarea
+        {...registration}
+        rows={4}
         className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition duration-200 focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
       />
       <FieldError message={error} />
@@ -279,6 +313,8 @@ export function CaseWorkflow({
   const selectedClient =
     lockedClient ?? clients.find((client) => client.client_id === selectedClientId);
   const status = watch("cases.status_of_case");
+  const applicantRole = watch("intake_record.applicant_role");
+  const pendingInCourt = watch("cases.pending_in_court");
   const hasSearch = query.trim().length > 0;
   const filteredClients = useMemo(() => {
     if (!hasSearch) return [];
@@ -587,6 +623,38 @@ export function CaseWorkflow({
             </section>
 
             <section className="border-t border-[#E5E7EB] pt-4">
+              <h3 className="text-sm font-semibold text-[#111827]">VIII Applicant Case Involvement</h3>
+              <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {[
+                  "Plaintiff",
+                  "Defendant",
+                  "Oppositor",
+                  "Petitioner",
+                  "Respondent",
+                  "Others",
+                  "Complainant",
+                  "Accused",
+                ].map((role) => (
+                  <label key={role} className="flex items-center gap-3 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-sm font-medium text-[#111827]/80">
+                    <input
+                      type="radio"
+                      value={role}
+                      {...register("intake_record.applicant_role")}
+                      className="h-4 w-4 border-[#E5E7EB] text-[#2F80ED] focus:ring-[#2F80ED]"
+                    />
+                    {role}
+                  </label>
+                ))}
+              </div>
+              <FieldError message={errors.intake_record?.applicant_role?.message} />
+              {applicantRole === "Others" && (
+                <div className="mt-3 max-w-md">
+                  <TextInput label="Specify Role" registration={register("intake_record.applicant_role_other")} error={errors.intake_record?.applicant_role_other?.message} />
+                </div>
+              )}
+            </section>
+
+            <section className="border-t border-[#E5E7EB] pt-4">
               <h3 className="text-sm font-semibold text-[#111827]">Representative</h3>
               <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <TextInput label="Representative Name" registration={register("representative.rep_name")} error={errors.representative?.rep_name?.message} />
@@ -600,19 +668,19 @@ export function CaseWorkflow({
             </section>
 
             <section className="border-t border-[#E5E7EB] pt-4">
-              <h3 className="text-sm font-semibold text-[#111827]">Adverse Party</h3>
+              <h3 className="text-sm font-semibold text-[#111827]">VIII-A Adverse Party</h3>
               <div className="mt-3 grid gap-4 md:grid-cols-2">
-                <TextInput label="Name" registration={register("adverse_party.name")} error={errors.adverse_party?.name?.message} />
-                <TextInput label="Address" registration={register("adverse_party.address")} error={errors.adverse_party?.address?.message} />
+                <TextInput label="Adverse Party Role" registration={register("adverse_party.role")} error={errors.adverse_party?.role?.message} />
+                <TextInput label="Adverse Party Name" registration={register("adverse_party.name")} error={errors.adverse_party?.name?.message} />
+                <div className="md:col-span-2">
+                  <TextInput label="Adverse Party Address" registration={register("adverse_party.address")} error={errors.adverse_party?.address?.message} />
+                </div>
               </div>
             </section>
 
             <section className="border-t border-[#E5E7EB] pt-4">
               <h3 className="text-sm font-semibold text-[#111827]">Case Status</h3>
               <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <TextInput label="Title of Case" registration={register("cases.title_of_case")} error={errors.cases?.title_of_case?.message} status={indicators["cases.title_of_case"]} />
-                <TextInput label="Case No." registration={register("cases.case_no")} error={errors.cases?.case_no?.message} status={indicators["cases.case_no"]} />
-                <TextInput label="Court Body" registration={register("cases.court_body")} error={errors.cases?.court_body?.message} status={indicators["cases.court_body"]} />
                 <label className="block">
                   <span className="text-sm font-medium text-[#111827]/80">
                     Status of Case
@@ -621,7 +689,9 @@ export function CaseWorkflow({
                   <select {...register("cases.status_of_case")} className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition duration-200 focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15">
                     <option>Pending</option>
                     <option>Ongoing</option>
+                    <option>Active</option>
                     <option>Terminated</option>
+                    <option>Archived</option>
                   </select>
                 </label>
                 <TextInput label="Last Action Taken" registration={register("cases.last_action_taken")} error={errors.cases?.last_action_taken?.message} />
@@ -635,7 +705,26 @@ export function CaseWorkflow({
                     <option>Rural</option>
                   </select>
                 </label>
-                <TextInput label="Cause of Action" registration={register("cases.cause_of_action")} error={errors.cases?.cause_of_action?.message} status={indicators["cases.cause_of_action"]} />
+                <label className="flex items-center gap-3 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-sm font-medium text-[#111827]/80">
+                  <input type="checkbox" {...register("cases.pending_in_court")} className="h-4 w-4 rounded border-[#E5E7EB] text-[#2F80ED] focus:ring-[#2F80ED]" />
+                  Pending in Court?
+                </label>
+                <div className="md:col-span-2 lg:col-span-3">
+                  <TextArea label="VIII-B Facts of Case" registration={register("cases.facts_of_case")} error={errors.cases?.facts_of_case?.message} status={indicators["cases.facts_of_case"]} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                  <TextArea label="VIII-C Cause of Action / Nature of Offense" registration={register("cases.cause_of_action")} error={errors.cases?.cause_of_action?.message} status={indicators["cases.cause_of_action"]} />
+                </div>
+                {pendingInCourt && (
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <h4 className="mb-3 text-sm font-semibold text-[#111827]">VIII-D Pending Court Details</h4>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <TextInput label="Title of Case" registration={register("cases.title_of_case")} error={errors.cases?.title_of_case?.message} status={indicators["cases.title_of_case"]} />
+                      <TextInput label="Docket Number" registration={register("cases.case_no")} error={errors.cases?.case_no?.message} status={indicators["cases.case_no"]} />
+                      <TextInput label="Court / Body / Tribunal" registration={register("cases.court_body")} error={errors.cases?.court_body?.message} status={indicators["cases.court_body"]} />
+                    </div>
+                  </div>
+                )}
                 {status === "Terminated" && (
                   <>
                     <TextInput label="Cause of Termination" registration={register("cases.cause_of_termination")} status={indicators["cases.cause_of_termination"]} />

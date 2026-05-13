@@ -1,4 +1,4 @@
-export type CaseStatus = "Pending" | "Ongoing" | "Terminated";
+export type CaseStatus = "Pending" | "Ongoing" | "Active" | "Terminated" | "Archived";
 export type IntakeMethod = "manual" | "camera" | "upload";
 export type ExtractionStatus = "extracted" | "missing";
 
@@ -22,6 +22,14 @@ export interface ClientDetails {
   spouse: string;
   address_of_spouse: string;
   contact_no_of_spouse: string;
+  representative_name: string;
+  representative_age: number;
+  representative_sex: string;
+  representative_civil_status: string;
+  representative_address: string;
+  representative_contact_no: string;
+  representative_relationship: string;
+  representative_email: string;
   detained: boolean;
   detained_since: string;
   place_of_detention: string;
@@ -34,6 +42,20 @@ export interface ClientClassification {
   flag_urban: boolean;
   flag_rural: boolean;
   flag_drugs: boolean;
+  flag_foreign_national: boolean;
+  flag_vawc_victim: boolean;
+  flag_refugee_evacuee: boolean;
+  flag_law_enforcer: boolean;
+  flag_tenant_agrarian: boolean;
+  flag_ofw_land_based: boolean;
+  flag_ofw_sea_based: boolean;
+  flag_arrested_terrorism: boolean;
+  flag_indigenous_people: boolean;
+  flag_pwd: boolean;
+  flag_former_rebel_fve: boolean;
+  flag_torture_victim: boolean;
+  flag_trafficking_victim: boolean;
+  flag_voluntary_rehab_petitioner: boolean;
   classification_notes: string;
 }
 
@@ -50,6 +72,8 @@ export interface IntakeRecord {
   region: string;
   district_office: string;
   party_represented: string;
+  applicant_role: string;
+  applicant_role_other: string;
   nature_of_request: string;
   nature_of_case: string;
 }
@@ -65,6 +89,7 @@ export interface Representative {
 }
 
 export interface AdverseParty {
+  role: string;
   name: string;
   address: string;
 }
@@ -79,6 +104,8 @@ export interface CaseDetails {
   place_of_detention: string;
   location_type: "Urban" | "Rural" | "";
   cause_of_action: string;
+  facts_of_case: string;
+  pending_in_court: boolean;
   cause_of_termination: string;
   date_of_termination: string;
 }

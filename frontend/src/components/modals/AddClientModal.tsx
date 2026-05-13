@@ -35,6 +35,14 @@ const defaultValues: ClientFormValues = {
     spouse: "",
     address_of_spouse: "",
     contact_no_of_spouse: "",
+    representative_name: "",
+    representative_age: 0,
+    representative_sex: "",
+    representative_civil_status: "",
+    representative_address: "",
+    representative_contact_no: "",
+    representative_relationship: "",
+    representative_email: "",
     detained: false,
     detained_since: "",
     place_of_detention: "",
@@ -46,6 +54,20 @@ const defaultValues: ClientFormValues = {
     flag_urban: false,
     flag_rural: false,
     flag_drugs: false,
+    flag_foreign_national: false,
+    flag_vawc_victim: false,
+    flag_refugee_evacuee: false,
+    flag_law_enforcer: false,
+    flag_tenant_agrarian: false,
+    flag_ofw_land_based: false,
+    flag_ofw_sea_based: false,
+    flag_arrested_terrorism: false,
+    flag_indigenous_people: false,
+    flag_pwd: false,
+    flag_former_rebel_fve: false,
+    flag_torture_victim: false,
+    flag_trafficking_victim: false,
+    flag_voluntary_rehab_petitioner: false,
     classification_notes: "",
   },
 };
@@ -67,9 +89,10 @@ const stepFields: Array<Array<FieldPath<ClientFormValues>>> = [
   [
     "client_details.address",
     "client_details.contact_no",
-    "client_details.email",
-    "client_details.individual_monthly_income",
-  ],
+      "client_details.email",
+      "client_details.individual_monthly_income",
+      "client_details.representative_email",
+    ],
   [],
 ];
 
@@ -182,6 +205,29 @@ function MethodCard({
   );
 }
 
+const classificationOptions = [
+  ["flag_senior", "Senior Citizen"],
+  ["flag_cicl", "Child in Conflict with the Law"],
+  ["flag_female", "Female"],
+  ["flag_urban", "Urban"],
+  ["flag_rural", "Rural"],
+  ["flag_drugs", "Drug-related"],
+  ["flag_foreign_national", "Foreign National"],
+  ["flag_vawc_victim", "VAWC Victim"],
+  ["flag_refugee_evacuee", "Refugee / Evacuee"],
+  ["flag_law_enforcer", "Law Enforcer"],
+  ["flag_tenant_agrarian", "Tenant in Agrarian Case"],
+  ["flag_ofw_land_based", "OFW Land-Based"],
+  ["flag_ofw_sea_based", "OFW Sea-Based"],
+  ["flag_arrested_terrorism", "Arrested for Terrorism"],
+  ["flag_indigenous_people", "Indigenous People"],
+  ["flag_pwd", "PWD"],
+  ["flag_former_rebel_fve", "Former Rebel / FVE"],
+  ["flag_torture_victim", "Victim of Torture"],
+  ["flag_trafficking_victim", "Victim of Trafficking"],
+  ["flag_voluntary_rehab_petitioner", "Petitioner for Voluntary Rehab"],
+] as const;
+
 export default function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
   const addClient = useCriminalCasesStore((state) => state.addClient);
   const addCase = useCriminalCasesStore((state) => state.addCase);
@@ -251,6 +297,14 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
       "client_details.spouse",
       "client_details.address_of_spouse",
       "client_details.contact_no_of_spouse",
+      "client_details.representative_name",
+      "client_details.representative_age",
+      "client_details.representative_sex",
+      "client_details.representative_civil_status",
+      "client_details.representative_address",
+      "client_details.representative_contact_no",
+      "client_details.representative_relationship",
+      "client_details.representative_email",
       "client_details.detained",
       "client_details.detained_since",
       "client_details.place_of_detention",
@@ -260,6 +314,20 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
       "client_classification.flag_urban",
       "client_classification.flag_rural",
       "client_classification.flag_drugs",
+      "client_classification.flag_foreign_national",
+      "client_classification.flag_vawc_victim",
+      "client_classification.flag_refugee_evacuee",
+      "client_classification.flag_law_enforcer",
+      "client_classification.flag_tenant_agrarian",
+      "client_classification.flag_ofw_land_based",
+      "client_classification.flag_ofw_sea_based",
+      "client_classification.flag_arrested_terrorism",
+      "client_classification.flag_indigenous_people",
+      "client_classification.flag_pwd",
+      "client_classification.flag_former_rebel_fve",
+      "client_classification.flag_torture_victim",
+      "client_classification.flag_trafficking_victim",
+      "client_classification.flag_voluntary_rehab_petitioner",
       "client_classification.classification_notes",
     ] as Array<FieldPath<ClientFormValues>>;
 
@@ -468,6 +536,14 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
                   <TextInput label="Spouse" registration={register("client_details.spouse")} status={indicators["client_details.spouse"]} />
                   <TextInput label="Address of Spouse" registration={register("client_details.address_of_spouse")} status={indicators["client_details.address_of_spouse"]} />
                   <TextInput label="Contact No. of Spouse" registration={register("client_details.contact_no_of_spouse")} status={indicators["client_details.contact_no_of_spouse"]} />
+                  <TextInput label="Representative Name" registration={register("client_details.representative_name")} status={indicators["client_details.representative_name"]} />
+                  <TextInput label="Representative Age" type="number" registration={register("client_details.representative_age", { valueAsNumber: true })} error={errors.client_details?.representative_age?.message} status={indicators["client_details.representative_age"]} />
+                  <SelectInput label="Representative Sex" registration={register("client_details.representative_sex")} status={indicators["client_details.representative_sex"]} options={["Female", "Male"]} />
+                  <TextInput label="Representative Civil Status" registration={register("client_details.representative_civil_status")} status={indicators["client_details.representative_civil_status"]} />
+                  <TextInput label="Representative Address" registration={register("client_details.representative_address")} status={indicators["client_details.representative_address"]} />
+                  <TextInput label="Representative Contact Number" registration={register("client_details.representative_contact_no")} status={indicators["client_details.representative_contact_no"]} />
+                  <TextInput label="Relationship to Applicant" registration={register("client_details.representative_relationship")} status={indicators["client_details.representative_relationship"]} />
+                  <TextInput label="Representative Email" type="email" registration={register("client_details.representative_email")} error={errors.client_details?.representative_email?.message} status={indicators["client_details.representative_email"]} />
                   <label className="flex items-center gap-3 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-sm font-medium text-[#111827]/80">
                     <input type="checkbox" {...register("client_details.detained")} className="h-4 w-4 rounded border-[#E5E7EB] text-brand-600" />
                     Detained
@@ -483,15 +559,8 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
                   <div>
                   <h3 className="text-base font-semibold text-[#111827]">Classification</h3>
                     <p className="mt-1 text-sm text-[#111827]/60">Include all classification fields before saving.</p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      {[
-                        ["flag_senior", "Senior Citizen"],
-                        ["flag_cicl", "Child in Conflict with the Law"],
-                        ["flag_female", "Female"],
-                        ["flag_urban", "Urban"],
-                        ["flag_rural", "Rural"],
-                        ["flag_drugs", "Drug-related"],
-                      ].map(([name, label]) => (
+                    <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {classificationOptions.map(([name, label]) => (
                         <label key={name} className="flex items-center gap-3 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-sm font-medium text-[#111827]/80">
                           <input
                             type="checkbox"
@@ -523,6 +592,23 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
                         <dt className="text-[#111827]/60">Address</dt>
                         <dd className="font-medium text-[#111827]">{values.client_details.address || "Not provided"}</dd>
                       </div>
+                      <div>
+                        <dt className="text-[#111827]/60">Representative</dt>
+                        <dd className="font-medium text-[#111827]">{values.client_details.representative_name || "Not provided"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[#111827]/60">Relationship</dt>
+                        <dd className="font-medium text-[#111827]">{values.client_details.representative_relationship || "Not provided"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[#111827]/60">Classifications</dt>
+                        <dd className="font-medium text-[#111827]">
+                          {classificationOptions
+                            .filter(([name]) => values.client_classification[name])
+                            .map(([, label]) => label)
+                            .join(", ") || "None selected"}
+                        </dd>
+                      </div>
                     </dl>
                   </div>
                 </div>
@@ -533,7 +619,7 @@ export default function AddClientModal({ isOpen, onClose }: AddClientModalProps)
               <button
                 type="button"
                 onClick={() => (step === 0 ? setMethod(null) : setStep((current) => Math.max(current - 1, 0)))}
-                className="rounded-md border border-[#6c757d]/40 bg-[#FFFFFF] px-4 py-2 text-sm font-medium text-[#6c757d] transition hover:bg-[#F9FAFB]"
+                className="rounded-md border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-medium text-[#6B7280] transition duration-200 hover:bg-gray-50"
               >
                 Back
               </button>

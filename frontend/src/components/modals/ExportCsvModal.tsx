@@ -64,15 +64,17 @@ export default function ExportCsvModal({ isOpen, rows, onClose }: ExportCsvModal
               className="mt-1 w-full rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827] outline-none transition duration-200 focus:border-[#2F80ED] focus:ring-2 focus:ring-[#2F80ED]/15"
             >
               <option>All</option>
+              <option>Active</option>
               <option>Pending</option>
               <option>Ongoing</option>
               <option>Terminated</option>
+              <option>Archived</option>
             </select>
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-medium text-[#111827]/80">From</span>
+              <span className="text-sm font-medium text-[#111827]/80">Date From</span>
               <input
                 type="date"
                 value={filters.date_from}
@@ -81,7 +83,7 @@ export default function ExportCsvModal({ isOpen, rows, onClose }: ExportCsvModal
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-[#111827]/80">To</span>
+              <span className="text-sm font-medium text-[#111827]/80">Date To</span>
               <input
                 type="date"
                 value={filters.date_to}

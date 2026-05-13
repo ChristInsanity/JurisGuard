@@ -15,7 +15,9 @@ import type { CaseStatus, ClientRecord, CriminalCaseRecord } from "../types";
 const accordionBorderClass: Record<CaseStatus, string> = {
   Pending: "border-l-amber-400",
   Ongoing: "border-l-[#2F80ED]",
+  Active: "border-l-[#2F80ED]",
   Terminated: "border-l-[#DC2626]",
+  Archived: "border-l-gray-400",
 };
 
 const filterOptions: Array<{ value: CaseTableFilter; label: string }> = [
@@ -121,10 +123,21 @@ function CaseAccordion({ record }: { record: CriminalCaseRecord }) {
           <section>
             <h4 className="text-sm font-semibold text-[#111827]">Case Identification</h4>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <InfoTile label="Applicant Role" value={record.intake_record.applicant_role === "Others" ? record.intake_record.applicant_role_other : record.intake_record.applicant_role} />
               <InfoTile label="Case No" value={record.cases.case_no} />
               <InfoTile label="Court" value={record.cases.court_body} />
               <InfoTile label="Title" value={record.cases.title_of_case} />
               <InfoTile label="Cause of Action" value={record.cases.cause_of_action} />
+              <InfoTile label="Pending in Court" value={record.cases.pending_in_court ? "Yes" : "No"} />
+            </div>
+          </section>
+
+          <section>
+            <h4 className="text-sm font-semibold text-[#111827]">Adverse Party</h4>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <InfoTile label="Role" value={record.adverse_party.role} />
+              <InfoTile label="Name" value={record.adverse_party.name} />
+              <InfoTile label="Address" value={record.adverse_party.address} />
             </div>
           </section>
 
@@ -141,6 +154,7 @@ function CaseAccordion({ record }: { record: CriminalCaseRecord }) {
             <h4 className="text-sm font-semibold text-[#111827]">Case Status</h4>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <InfoTile label="Last Action Taken" value={record.cases.last_action_taken} />
+              <InfoTile label="Facts of Case" value={record.cases.facts_of_case} />
               {record.cases.status_of_case === "Terminated" && (
                 <>
                   <InfoTile label="Cause of Termination" value={record.cases.cause_of_termination} />
@@ -388,7 +402,7 @@ export default function CriminalCasesPage() {
       <AddCaseModal isOpen={showCaseModal} onClose={() => setShowCaseModal(false)} />
       <ExportCsvModal
         isOpen={showExportModal}
-        rows={rows}
+        rows={filteredRows}
         onClose={() => setShowExportModal(false)}
       />
       <ClientRecordModal

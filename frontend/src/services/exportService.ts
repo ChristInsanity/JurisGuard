@@ -10,7 +10,7 @@ export interface CriminalCaseRow {
 }
 
 export const criminalCaseExportFilterSchema = z.object({
-  status: z.enum(["All", "Pending", "Ongoing", "Terminated"]).default("All"),
+  status: z.enum(["All", "Active", "Pending", "Ongoing", "Terminated", "Archived"]).default("All"),
   date_from: z.string().optional(),
   date_to: z.string().optional(),
   location_type: z.enum(["All", "Urban", "Rural"]).default("All"),
@@ -88,38 +88,51 @@ export function buildCriminalCasesCsv(
   const parsedFilters = criminalCaseExportFilterSchema.parse(filters);
   const filteredRows = filterCriminalCaseRows(rows, parsedFilters);
   const headers = [
-    "Control No.",
-    "Form Date",
-    "Client",
-    "Sex",
-    "Age",
-    "Party Represented",
-    "Case No.",
-    "Court Body",
-    "Title",
-    "Status",
-    "Location Type",
-    "Cause of Action",
-    "Cause of Termination",
-    "Date of Termination",
+    "CONTROL NUMBER",
+    "PARTY REPRESENTED",
+    "GENDER/SEX",
+    "TITLE OF THE CASE",
+    "COURT/BODY",
+    "CASE NO",
+    "CAUSE OF ACTION",
+    "STATUS OF THE CASE",
+    "LAST ACTION TAKEN",
+    "CAUSE OF TERMINATION",
+    "DATE OF TERMINATION",
+    "AGE",
+    "URBAN",
+    "RURAL",
+    "DATE OF CONFINEMENT",
+    "PLACE OF DETENTION",
+    "CASE RECEIVED",
+    "ADDRESS",
+    "CONTACT NUMBER",
+    "RELATIONSHIP TO APPLICANT",
   ];
 
-  const lines = filteredRows.map(({ record, client, clientName }) =>
+  const lines = filteredRows.map(({ record, client }) =>
     [
       record.intake_record.control_no,
-      record.intake_record.form_date,
-      clientName,
-      client?.client.sex,
-      client?.client.age,
       record.intake_record.party_represented,
-      record.cases.case_no,
-      record.cases.court_body,
+      client?.client.sex,
       record.cases.title_of_case,
-      record.cases.status_of_case,
-      record.cases.location_type,
+      record.cases.court_body,
+      record.cases.case_no,
       record.cases.cause_of_action,
+      record.cases.status_of_case,
+      record.cases.last_action_taken,
       record.cases.cause_of_termination,
       record.cases.date_of_termination,
+      client?.client.age,
+      record.cases.location_type === "Urban" ? "Yes" : "",
+      record.cases.location_type === "Rural" ? "Yes" : "",
+      record.cases.date_of_confinement,
+      record.cases.place_of_detention,
+      record.intake_record.form_date,
+      client?.client_details.address,
+      client?.client_details.contact_no,
+      record.representative.relationship_to_applicant ||
+        client?.client_details.representative_relationship,
     ]
       .map(csvCell)
       .join(",")
